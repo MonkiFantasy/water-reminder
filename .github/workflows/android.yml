@@ -18,16 +18,22 @@ jobs:
       with:
         targets: aarch64-linux-android
 
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+
+    - name: Install Android Platform 30
+      # 显式安装 API 30 平台，解决 "Platform 30 is not installed" 错误
+      run: |
+        sdkmanager "platforms;android-30" "build-tools;30.0.3"
+
     - name: Install cargo-apk
       run: cargo install cargo-apk
 
     - name: Build APK
-      # GitHub Runner 预装了 NDK，cargo-apk 会自动查找
       run: cargo apk build --release
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: water-reminder-apk
-        # cargo-apk 生成的 APK 路径
         path: target/release/apk/water_reminder.apk
