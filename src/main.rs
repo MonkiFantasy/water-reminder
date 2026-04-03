@@ -58,7 +58,7 @@ fn save_state(state: &AppState) {
     }
 }
 
-// 核心逻辑抽离出来，供 main 或 android_main 调用
+// 核心逻辑抽离出来
 async fn run_app() -> Result<(), slint::PlatformError> {
     let ui = MainWindow::new()?;
     let state = load_state();
@@ -109,12 +109,13 @@ async fn run_app() -> Result<(), slint::PlatformError> {
     ui.run()
 }
 
-// Android 专用的入口（由 slint 的 android-activity 后端调用）
+// Android 专用的入口
 #[cfg(target_os = "android")]
-#[no_mangle]
+#[unsafe(no_mangle)]
 fn android_main(app: slint::android::AndroidApp) {
-    slint::android::init_with_event_loop(app).unwrap();
-    // 使用 tokio 运行异步任务
+    // 修复 1：使用 slint::android::init 替代 init_with_event_loop
+    slint::android::init(app).unwrap();
+    
     let rt = tokio::runtime::Runtime::new().unwrap();
     rt.block_on(async {
         run_app().await.unwrap();
