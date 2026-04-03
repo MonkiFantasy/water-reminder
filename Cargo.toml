@@ -10,7 +10,6 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 chrono = { version = "0.4", features = ["serde"] }
 directories = "5.0"
-# 用于调用安卓原生通知接口
 jni = "0.21"
 
 [build-dependencies]
@@ -23,5 +22,5 @@ crate-type = ["lib", "cdylib"]
 [package.metadata.android]
 package = "com.hacker.waterreminder"
 label = "WaterReminder Pro"
-# 权限声明：震动和通知
-# build_targets = ["aarch64-linux-android"]
+# 声明安卓通知权限
+permissions = ["android.permission.POST_NOTIFICATIONS", "android.permission.VIBRATE"]
