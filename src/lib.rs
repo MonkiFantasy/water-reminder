@@ -67,13 +67,14 @@ pub async fn run_app() -> Result<(), slint::PlatformError> {
 
     // 逻辑：增加水量
     let ui_handle_add = ui_handle.clone();
-    ui.on_add_water(move |amount| {
+    ui.on_add_water(move |amount: i32| {
         if let Some(ui) = ui_handle_add.upgrade() {
             let current = ui.get_current_water();
-            let new_current = (current + amount).min(ui.get_goal_water());
+            let goal = ui.get_goal_water();
+            let new_current = (current + amount).min(goal);
             ui.set_current_water(new_current);
             ui.set_last_event(slint::SharedString::from(format!("INTAKE_SUCCESS: +{}ML", amount)));
-            ui.set_quote("SYSTEM: STATUS_OPTIMAL".into());
+            ui.set_quote(slint::SharedString::from("SYSTEM: STATUS_OPTIMAL"));
             
             let mut s = load_state();
             s.current_water = new_current;
@@ -82,9 +83,9 @@ pub async fn run_app() -> Result<(), slint::PlatformError> {
         }
     });
 
-    // 逻辑：修改频率
+    // 逻辑：修改频率 (确保闭包参数类型为 i32)
     let tx_clone = tx.clone();
-    ui.on_update_interval(move |secs| {
+    ui.on_update_interval(move |secs: i32| {
         let mut s = load_state();
         s.interval_seconds = secs;
         save_state(&s);
@@ -96,12 +97,12 @@ pub async fn run_app() -> Result<(), slint::PlatformError> {
     ui.on_reset_data(move || {
         if let Some(ui) = ui_handle_reset.upgrade() {
             ui.set_current_water(0);
-            ui.set_last_event("SYSTEM: CORE_RESET_COMPLETED".into());
+            ui.set_last_event(slint::SharedString::from("SYSTEM: CORE_RESET_COMPLETED"));
             save_state(&AppState::default());
         }
     });
 
-    // 定时器协程：关键修复，现在它能更新 UI 了
+    // 定时器协程
     let ui_handle_timer = ui_handle.clone();
     tokio::spawn(async move {
         let mut secs = *rx.borrow();
@@ -110,7 +111,6 @@ pub async fn run_app() -> Result<(), slint::PlatformError> {
                 _ = sleep(Duration::from_secs(secs as u64)) => {
                     let s = load_state();
                     if s.current_water < 2000 {
-                        // 尝试更新 UI 界面上的“控制台日志”
                         if let Some(ui) = ui_handle_timer.upgrade() {
                             let _ = slint::invoke_from_event_loop(move || {
                                 ui.set_last_event(slint::SharedString::from("WARNING: CRITICAL_DEHYDRATION_DETECTED"));

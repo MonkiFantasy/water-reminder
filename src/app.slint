@@ -35,7 +35,6 @@ export component MainWindow inherits Window {
             Rectangle {
                 width: 30px;
                 height: 30px;
-                // 杯身
                 Rectangle {
                     x: 5px; y: 5px;
                     width: 15px; height: 20px;
@@ -43,8 +42,6 @@ export component MainWindow inherits Window {
                     border-color: #00FF00;
                     border-bottom-left-radius: 4px;
                     border-bottom-right-radius: 4px;
-                    
-                    // 水量填充
                     Rectangle {
                         x: 2px;
                         y: parent.height - self.height - 2px;
@@ -54,7 +51,6 @@ export component MainWindow inherits Window {
                         opacity: 0.6;
                     }
                 }
-                // 杯把
                 Path {
                     x: 20px; y: 8px;
                     width: 8px; height: 12px;
@@ -65,13 +61,11 @@ export component MainWindow inherits Window {
             }
         }
 
-        // 核心显示区域：巨大的百分比
         Rectangle {
             height: 120px;
             border-width: 1px;
             border-color: #004400;
             background: #001100;
-            
             Text {
                 text: Math.round((current_water / goal_water) * 100) + "%";
                 font-size: 64px;
@@ -81,7 +75,6 @@ export component MainWindow inherits Window {
             }
         }
 
-        // 分段进度条
         HorizontalLayout {
             height: 20px;
             spacing: 4px;
@@ -98,7 +91,6 @@ export component MainWindow inherits Window {
             horizontal-alignment: center;
         }
 
-        // 提醒设置
         Rectangle {
             height: 100px;
             border-width: 1px;
@@ -106,31 +98,24 @@ export component MainWindow inherits Window {
             VerticalLayout {
                 padding: 10px;
                 spacing: 8px;
-                Text { text: "REMINDER_FREQ: " + interval_minutes + " MIN"; color: #00FF00; font-family: "monospace"; }
+                Text { text: "REMINDER_FREQ: " + interval_minutes + " SEC"; color: #00FF00; font-family: "monospace"; }
                 HorizontalLayout {
                     spacing: 8px;
-                    Button { text: "[30M]"; clicked => { root.interval_minutes = 30; root.update_interval(30); } }
-                    Button { text: "[60M]"; clicked => { root.interval_minutes = 60; root.update_interval(60); } }
-                    Button { text: "[120M]"; clicked => { root.interval_minutes = 120; root.update_interval(120); } }
+                    // 显式将 30 传入作为 int
+                    Button { text: "[30S]"; clicked => { root.interval_minutes = 30; root.update_interval(30); } }
+                    Button { text: "[60S]"; clicked => { root.interval_minutes = 60; root.update_interval(60); } }
+                    Button { text: "[120S]"; clicked => { root.interval_minutes = 120; root.update_interval(120); } }
                 }
             }
         }
 
-        // 操作按钮
         HorizontalLayout {
             height: 50px;
             spacing: 12px;
-            Button {
-                text: "++ INTAKE_250ML";
-                clicked => { root.add_water(250) }
-            }
-            Button {
-                text: "++ INTAKE_500ML";
-                clicked => { root.add_water(500) }
-            }
+            Button { text: "++ INTAKE_250ML"; clicked => { root.add_water(250) } }
+            Button { text: "++ INTAKE_500ML"; clicked => { root.add_water(500) } }
         }
 
-        // 控制台日志窗口
         Rectangle {
             vertical-stretch: 1;
             background: #000000;
