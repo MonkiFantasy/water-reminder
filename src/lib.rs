@@ -20,19 +20,18 @@ impl Default for AppState {
         Self {
             current_water: 0,
             last_update: Utc::now(),
-            interval_seconds: 60, // 默认改为 60 秒测试
+            interval_seconds: 60,
         }
     }
 }
 
-// 获取存储路径
 fn get_config_path() -> PathBuf {
     if let Some(proj_dirs) = directories::ProjectDirs::from("com", "hacker", "waterreminder") {
         let config_dir = proj_dirs.config_dir();
         let _ = fs::create_dir_all(config_dir);
-        return config_dir.join("data_v3.json");
+        return config_dir.join("data_v4.json");
     }
-    PathBuf::from("data_v3.json")
+    PathBuf::from("data_v4.json")
 }
 
 fn load_state() -> AppState {
@@ -56,29 +55,12 @@ fn save_state(state: &AppState) {
     if let Ok(content) = serde_json::to_string(state) { let _ = fs::write(path, content); }
 }
 
-// 通用的日志/通知函数
-fn notify_user(title: &str, message: &str) {
-    // 这里输出到安卓 logcat，如果是真机可以通过 adb logcat 查看
-    println!("[NOTIFICATION] {}: {}", title, message);
-    // 注意：真正的安卓弹出通知需要 JNI 调用 Java Context 和 NotificationChannel
-    // 这里我们先专注于验证定时器逻辑是否在 60 秒后工作
-}
-
 pub async fn run_app() -> Result<(), slint::PlatformError> {
     let ui = MainWindow::new()?;
     let state = load_state();
 
     ui.set_current_water(state.current_water);
-    // UI 显示的频率改为秒显示
     ui.set_interval_minutes(state.interval_seconds);
-
-    let quotes = vec![
-        "SYSTEM_CHECK: WATER_LEVEL_CRITICAL",
-        "PROTOCOL_ENGAGED: AUTO_HYDRATE",
-        "MAINTAIN_INTERNAL_COOLING_LIQUID",
-    ];
-    let quote_idx = (Utc::now().timestamp() as usize) % quotes.len();
-    ui.set_quote(quotes[quote_idx].into());
 
     let (tx, mut rx) = watch::channel(state.interval_seconds);
     let ui_handle = ui.as_weak();
@@ -90,7 +72,8 @@ pub async fn run_app() -> Result<(), slint::PlatformError> {
             let current = ui.get_current_water();
             let new_current = (current + amount).min(ui.get_goal_water());
             ui.set_current_water(new_current);
-            ui.set_last_event(format!("INTAKE: +{}ML", amount).into());
+            ui.set_last_event(format!("INTAKE_SUCCESS: +{}ML", amount).into());
+            ui.set_quote("SYSTEM: STATUS_OPTIMAL".into());
             
             let mut s = load_state();
             s.current_water = new_current;
@@ -99,7 +82,7 @@ pub async fn run_app() -> Result<(), slint::PlatformError> {
         }
     });
 
-    // 逻辑：修改频率（秒）
+    // 逻辑：修改频率
     let tx_clone = tx.clone();
     ui.on_update_interval(move |secs| {
         let mut s = load_state();
@@ -108,7 +91,18 @@ pub async fn run_app() -> Result<(), slint::PlatformError> {
         let _ = tx_clone.send(secs);
     });
 
-    // 定时器协程 (改为每秒检查并倒计时)
+    // 逻辑：重置
+    let ui_handle_reset = ui_handle.clone();
+    ui.on_reset_data(move || {
+        if let Some(ui) = ui_handle_reset.upgrade() {
+            ui.set_current_water(0);
+            ui.set_last_event("SYSTEM: CORE_RESET_COMPLETED".into());
+            save_state(&AppState::default());
+        }
+    });
+
+    // 定时器协程：关键修复，现在它能更新 UI 了
+    let ui_handle_timer = ui_handle.clone();
     tokio::spawn(async move {
         let mut secs = *rx.borrow();
         loop {
@@ -116,7 +110,13 @@ pub async fn run_app() -> Result<(), slint::PlatformError> {
                 _ = sleep(Duration::from_secs(secs as u64)) => {
                     let s = load_state();
                     if s.current_water < 2000 {
-                        notify_user("喝水助手", "检测到水分不足，请立即补充！");
+                        // 尝试更新 UI 界面上的“控制台日志”
+                        if let Some(ui) = ui_handle_timer.upgrade() {
+                            let _ = slint::invoke_from_event_loop(move || {
+                                ui.set_last_event("WARNING: CRITICAL_DEHYDRATION_DETECTED".into());
+                                ui.set_quote("ACTION_REQUIRED: CONSUME_WATER_IMMEDIATELY".into());
+                            });
+                        }
                     }
                 }
                 changed = rx.changed() => {
