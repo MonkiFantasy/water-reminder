@@ -1,73 +1,120 @@
-import { Button, ProgressIndicator } from "std-widgets.slint";
+import { Button, Slider, VerticalLayout, HorizontalLayout } from "std-widgets.slint";
 
 export component MainWindow inherits Window {
     in-out property <int> current_water: 0;
     in property <int> goal_water: 2000;
-    in property <string> quote: "保持水分，保护你的内存安全。";
+    in property <string> quote: "INIT_HYDRATION_PROTOCOL...";
+    in property <string> last_event: "SYSTEM: STANDBY";
+    in-out property <int> interval_minutes: 60;
 
     callback add_water(int);
     callback reset_data();
+    callback update_interval(int);
 
-    title: "WaterReminder";
-    background: #000000;
-    min-width: 300px;
-    min-height: 500px;
+    title: "WaterReminder Pro";
+    background: #050505;
+    min-width: 320px;
+    min-height: 560px;
 
     VerticalLayout {
-        padding: 20px;
-        spacing: 30px;
-        alignment: center;
+        padding: 24px;
+        spacing: 20px;
 
-        // 顶部标题
+        // 顶部黑客风标题
         Text {
-            text: "WaterReminder";
-            font-size: 24px;
+            text: "[ WATER_OS_V1.0 ]";
+            font-size: 14px;
             color: #00FF00;
+            font-family: "monospace";
+            horizontal-alignment: left;
+        }
+
+        // 核心显示区域：巨大的百分比
+        Rectangle {
+            height: 120px;
+            border-width: 1px;
+            border-color: #004400;
+            background: #001100;
+            
+            Text {
+                text: Math.round((current_water / goal_water) * 100) + "%";
+                font-size: 64px;
+                color: #00FF00;
+                font-family: "monospace";
+                font-weight: 900;
+            }
+        }
+
+        // 分段进度条 (自定义绘制)
+        HorizontalLayout {
+            height: 20px;
+            spacing: 4px;
+            for i in 20 : Rectangle {
+                background: (i / 20.0 < (current_water / goal_water)) ? #00FF00 : #002200;
+                border-radius: 2px;
+            }
+        }
+
+        Text {
+            text: "STORAGE: " + current_water + " / " + goal_water + " ML";
+            color: #00FF00;
+            font-family: "monospace";
             horizontal-alignment: center;
         }
 
-        // 进度显示
-        VerticalLayout {
-            spacing: 10px;
-            ProgressIndicator {
-                progress: Math.min(1.0, current_water / goal_water);
-                height: 20px;
-            }
-            Text {
-                text: "已饮用 " + current_water + " / " + goal_water + " ml";
-                font-size: 28px;
-                color: #00FF00;
-                horizontal-alignment: center;
-                font-weight: 700;
+        // 提醒设置
+        Rectangle {
+            height: 100px;
+            border-width: 1px;
+            border-color: #004400;
+            VerticalLayout {
+                padding: 10px;
+                spacing: 8px;
+                Text { text: "REMINDER_FREQ: " + interval_minutes + " MIN"; color: #00FF00; font-family: "monospace"; }
+                HorizontalLayout {
+                    spacing: 8px;
+                    Button { text: "[30M]"; clicked => { root.interval_minutes = 30; root.update_interval(30); } }
+                    Button { text: "[60M]"; clicked => { root.interval_minutes = 60; root.update_interval(60); } }
+                    Button { text: "[120M]"; clicked => { root.interval_minutes = 120; root.update_interval(120); } }
+                }
             }
         }
 
-        // 按钮组
+        // 操作按钮
         HorizontalLayout {
-            spacing: 10px;
-            alignment: center;
+            height: 50px;
+            spacing: 12px;
             Button {
-                text: "[+250ml]";
+                text: "++ INTAKE_250ML";
                 clicked => { root.add_water(250) }
             }
             Button {
-                text: "[+500ml]";
+                text: "++ INTAKE_500ML";
                 clicked => { root.add_water(500) }
-            }
-            Button {
-                text: "[重置数据]";
-                clicked => { root.reset_data() }
             }
         }
 
-        // 底部文案
-        Text {
-            text: quote;
-            font-size: 14px;
-            color: #00FF00;
-            horizontal-alignment: center;
-            font-italic: true;
-            wrap: word-wrap;
+        // 控制台日志窗口
+        Rectangle {
+            vertical-stretch: 1;
+            background: #000000;
+            border-width: 1px;
+            border-color: #004400;
+            VerticalLayout {
+                padding: 10px;
+                Text {
+                    text: "> " + last_event + "\n> " + quote;
+                    color: #00CC00;
+                    font-size: 12px;
+                    font-family: "monospace";
+                    wrap: word-wrap;
+                }
+            }
+        }
+
+        Button {
+            text: "[ RESET_CORE_DATA ]";
+            clicked => { root.reset_data() }
         }
     }
 }
