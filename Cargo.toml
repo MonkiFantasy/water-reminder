@@ -18,6 +18,5 @@ slint-build = "1.8.0"
 [package.metadata.android]
 package = "com.hacker.waterreminder"
 label = "喝水助手"
-assets = "assets"
 # 权限声明（如果后续需要通知功能）
 # build_targets = ["aarch64-linux-android"]
