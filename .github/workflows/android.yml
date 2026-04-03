@@ -22,18 +22,19 @@ jobs:
       uses: android-actions/setup-android@v3
 
     - name: Install Android Platform 30
-      # 显式安装 API 30 平台，解决 "Platform 30 is not installed" 错误
       run: |
         sdkmanager "platforms;android-30" "build-tools;30.0.3"
 
     - name: Install cargo-apk
       run: cargo install cargo-apk
 
-    - name: Build APK
-      run: cargo apk build --release
+    - name: Build APK (Debug)
+      # 使用 debug 模式避开签名要求，方便快速测试
+      run: cargo apk build
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: water-reminder-apk
-        path: target/release/apk/water_reminder.apk
+        # debug 模式生成的路径在 target/debug/apk/
+        path: target/debug/apk/water_reminder.apk

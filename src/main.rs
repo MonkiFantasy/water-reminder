@@ -124,6 +124,7 @@ fn android_main(app: slint::android::AndroidApp) {
 
 // Android 环境下也需要一个空的 main 函数来满足二进制 crate 的要求
 #[cfg(target_os = "android")]
+#[allow(dead_code)]
 fn main() {}
 
 // 普通桌面系统/Termux 的入口
