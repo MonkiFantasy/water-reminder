@@ -29,12 +29,11 @@ jobs:
       run: cargo install cargo-apk
 
     - name: Build APK (Debug)
-      # 使用 debug 模式避开签名要求，方便快速测试
-      run: cargo apk build
+      # 关键修改：显式指定编译 lib (cdylib)，避开 bin 冲突
+      run: cargo apk build --lib
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: water-reminder-apk
-        # debug 模式生成的路径在 target/debug/apk/
         path: target/debug/apk/water_reminder.apk

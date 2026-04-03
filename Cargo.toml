@@ -4,7 +4,6 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-# 开启 android-activity 后端
 slint = { version = "1.8.0", features = ["compat-1-2", "backend-android-activity-06", "renderer-software", "std"] }
 tokio = { version = "1.0", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
@@ -16,12 +15,8 @@ directories = "5.0"
 slint-build = "1.8.0"
 
 [lib]
-path = "src/main.rs"
+path = "src/lib.rs"
 crate-type = ["lib", "cdylib"]
-
-[[bin]]
-name = "water_reminder"
-path = "src/main.rs"
 
 [package.metadata.android]
 package = "com.hacker.waterreminder"
