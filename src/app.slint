@@ -1,4 +1,4 @@
-import { Button, Slider, VerticalLayout, HorizontalLayout } from "std-widgets.slint";
+import { Button, Slider } from "std-widgets.slint";
 
 export component MainWindow inherits Window {
     in-out property <int> current_water: 0;
@@ -20,13 +20,49 @@ export component MainWindow inherits Window {
         padding: 24px;
         spacing: 20px;
 
-        // 顶部黑客风标题
-        Text {
-            text: "[ WATER_OS_V1.0 ]";
-            font-size: 14px;
-            color: #00FF00;
-            font-family: "monospace";
-            horizontal-alignment: left;
+        // 顶部黑客风标题与图标
+        HorizontalLayout {
+            alignment: space-between;
+            Text {
+                text: "[ WATER_OS_V1.0 ]";
+                font-size: 14px;
+                color: #00FF00;
+                font-family: "monospace";
+                vertical-alignment: center;
+            }
+            
+            // 手绘风格的荧光绿“水杯”图标
+            Rectangle {
+                width: 30px;
+                height: 30px;
+                // 杯身
+                Rectangle {
+                    x: 5px; y: 5px;
+                    width: 15px; height: 20px;
+                    border-width: 2px;
+                    border-color: #00FF00;
+                    border-bottom-left-radius: 4px;
+                    border-bottom-right-radius: 4px;
+                    
+                    // 水量填充
+                    Rectangle {
+                        x: 2px;
+                        y: parent.height - self.height - 2px;
+                        width: parent.width - 4px;
+                        height: (parent.height - 4px) * Math.min(1.0, current_water / goal_water);
+                        background: #00FF00;
+                        opacity: 0.6;
+                    }
+                }
+                // 杯把
+                Path {
+                    x: 20px; y: 8px;
+                    width: 8px; height: 12px;
+                    stroke: #00FF00;
+                    stroke-width: 2px;
+                    commands: "M 0 0 C 8 0 8 12 0 12";
+                }
+            }
         }
 
         // 核心显示区域：巨大的百分比
@@ -45,7 +81,7 @@ export component MainWindow inherits Window {
             }
         }
 
-        // 分段进度条 (自定义绘制)
+        // 分段进度条
         HorizontalLayout {
             height: 20px;
             spacing: 4px;
