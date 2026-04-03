@@ -25,13 +25,11 @@ impl Default for AppState {
 
 // 获取持久化数据路径
 fn get_config_path() -> PathBuf {
-    // Android 环境下，优先尝试标准的配置目录
     if let Some(proj_dirs) = directories::ProjectDirs::from("com", "hacker", "waterreminder") {
         let config_dir = proj_dirs.config_dir();
         let _ = fs::create_dir_all(config_dir);
         return config_dir.join("data.json");
     }
-    // 降级方案：当前目录下的 data.json
     PathBuf::from("data.json")
 }
 
@@ -60,10 +58,8 @@ fn save_state(state: &AppState) {
     }
 }
 
-#[tokio::main]
-async fn main() -> Result<(), slint::PlatformError> {
-    // 在 Android 环境中，Slint 会通过其 android-activity 后端接管生命周期
-    
+// 核心逻辑抽离出来，供 main 或 android_main 调用
+async fn run_app() -> Result<(), slint::PlatformError> {
     let ui = MainWindow::new()?;
     let state = load_state();
 
@@ -81,18 +77,13 @@ async fn main() -> Result<(), slint::PlatformError> {
     ui.set_quote(quotes[quote_idx].into());
 
     let ui_handle = ui.as_weak();
-
     ui.on_add_water(move |amount| {
         if let Some(ui) = ui_handle.upgrade() {
             let current = ui.get_current_water();
             let goal = ui.get_goal_water();
             let new_current = (current + amount).min(goal);
             ui.set_current_water(new_current);
-            
-            save_state(&AppState {
-                current_water: new_current,
-                last_update: Utc::now(),
-            });
+            save_state(&AppState { current_water: new_current, last_update: Utc::now() });
         }
     });
 
@@ -104,17 +95,35 @@ async fn main() -> Result<(), slint::PlatformError> {
         }
     });
 
-    // 提醒协程
     tokio::spawn(async move {
         let mut interval = interval(Duration::from_secs(3600));
         loop {
             interval.tick().await;
             let state = load_state();
             if state.current_water < 2000 {
-                println!("[NOTIFICATION_PENDING]: 喝水时间到了。");
+                println!("[NOTIFICATION_PENDING]: 该喝水了！");
             }
         }
     });
 
     ui.run()
+}
+
+// Android 专用的入口（由 slint 的 android-activity 后端调用）
+#[cfg(target_os = "android")]
+#[no_mangle]
+fn android_main(app: slint::android::AndroidApp) {
+    slint::android::init_with_event_loop(app).unwrap();
+    // 使用 tokio 运行异步任务
+    let rt = tokio::runtime::Runtime::new().unwrap();
+    rt.block_on(async {
+        run_app().await.unwrap();
+    });
+}
+
+// 普通桌面系统/Termux 的入口
+#[cfg(not(target_os = "android"))]
+#[tokio::main]
+async fn main() -> Result<(), slint::PlatformError> {
+    run_app().await
 }
