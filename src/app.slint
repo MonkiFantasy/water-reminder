@@ -1,0 +1,73 @@
+import { Button, ProgressIndicator } from "std-widgets.slint";
+
+export component MainWindow inherits Window {
+    in-out property <int> current_water: 0;
+    in property <int> goal_water: 2000;
+    in property <string> quote: "保持水分，保护你的内存安全。";
+
+    callback add_water(int);
+    callback reset_data();
+
+    title: "WaterReminder";
+    background: #000000;
+    min-width: 300px;
+    min-height: 500px;
+
+    VerticalLayout {
+        padding: 20px;
+        spacing: 30px;
+        alignment: center;
+
+        // 顶部标题
+        Text {
+            text: "WaterReminder";
+            font-size: 24px;
+            color: #00FF00;
+            horizontal-alignment: center;
+        }
+
+        // 进度显示
+        VerticalLayout {
+            spacing: 10px;
+            ProgressIndicator {
+                progress: Math.min(1.0, current_water / goal_water);
+                height: 20px;
+            }
+            Text {
+                text: "已饮用 " + current_water + " / " + goal_water + " ml";
+                font-size: 28px;
+                color: #00FF00;
+                horizontal-alignment: center;
+                font-weight: 700;
+            }
+        }
+
+        // 按钮组
+        HorizontalLayout {
+            spacing: 10px;
+            alignment: center;
+            Button {
+                text: "[+250ml]";
+                clicked => { root.add_water(250) }
+            }
+            Button {
+                text: "[+500ml]";
+                clicked => { root.add_water(500) }
+            }
+            Button {
+                text: "[重置数据]";
+                clicked => { root.reset_data() }
+            }
+        }
+
+        // 底部文案
+        Text {
+            text: quote;
+            font-size: 14px;
+            color: #00FF00;
+            horizontal-alignment: center;
+            font-italic: true;
+            wrap: word-wrap;
+        }
+    }
+}

@@ -1,0 +1,33 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: aarch64-linux-android
+
+    - name: Install cargo-apk
+      run: cargo install cargo-apk
+
+    - name: Build APK
+      # GitHub Runner 预装了 NDK，cargo-apk 会自动查找
+      run: cargo apk build --release
+
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: water-reminder-apk
+        # cargo-apk 生成的 APK 路径
+        path: target/release/apk/water_reminder.apk
