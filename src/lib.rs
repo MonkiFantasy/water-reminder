@@ -72,7 +72,7 @@ pub async fn run_app() -> Result<(), slint::PlatformError> {
             let current = ui.get_current_water();
             let new_current = (current + amount).min(ui.get_goal_water());
             ui.set_current_water(new_current);
-            ui.set_last_event(format!("INTAKE_SUCCESS: +{}ML", amount).into());
+            ui.set_last_event(slint::SharedString::from(format!("INTAKE_SUCCESS: +{}ML", amount)));
             ui.set_quote("SYSTEM: STATUS_OPTIMAL".into());
             
             let mut s = load_state();
@@ -113,8 +113,8 @@ pub async fn run_app() -> Result<(), slint::PlatformError> {
                         // 尝试更新 UI 界面上的“控制台日志”
                         if let Some(ui) = ui_handle_timer.upgrade() {
                             let _ = slint::invoke_from_event_loop(move || {
-                                ui.set_last_event("WARNING: CRITICAL_DEHYDRATION_DETECTED".into());
-                                ui.set_quote("ACTION_REQUIRED: CONSUME_WATER_IMMEDIATELY".into());
+                                ui.set_last_event(slint::SharedString::from("WARNING: CRITICAL_DEHYDRATION_DETECTED"));
+                                ui.set_quote(slint::SharedString::from("ACTION_REQUIRED: CONSUME_WATER_IMMEDIATELY"));
                             });
                         }
                     }
