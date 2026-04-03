@@ -122,6 +122,10 @@ fn android_main(app: slint::android::AndroidApp) {
     });
 }
 
+// Android 环境下也需要一个空的 main 函数来满足二进制 crate 的要求
+#[cfg(target_os = "android")]
+fn main() {}
+
 // 普通桌面系统/Termux 的入口
 #[cfg(not(target_os = "android"))]
 #[tokio::main]
