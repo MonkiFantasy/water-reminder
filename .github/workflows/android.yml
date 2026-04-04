@@ -29,27 +29,32 @@ jobs:
       run: cargo install cargo-apk
 
     - name: Build APK (Debug)
-      # 增加 pipefail 确保编译错误能被捕获
       shell: bash
       run: |
         set -o pipefail
+        # 记录完整日志
         cargo apk build --lib 2>&1 | tee build.log
 
-    - name: List files for debugging
-      if: always()
-      # 查看 target 目录结构，确认 APK 真实路径
-      run: find target -name "*.apk"
+    - name: Show Critical Errors on Failure
+      if: failure()
+      shell: bash
+      run: |
+        echo "=== [FIRST 50 LINES OF ERROR] ==="
+        head -n 50 build.log
+        echo ""
+        echo "=== [CORE COMPILATION ERRORS] ==="
+        # 提取包含 'error:' 或 'error[' 的行及其上下文
+        grep -A 3 -E "error:|error\[" build.log | head -n 50
+        echo ""
+        echo "=== [SLINT COMPILER ERRORS] ==="
+        grep -i "slint" build.log | head -n 20
 
-    - name: Upload Build Log on Failure
+    - name: Upload Full Build Log on Failure
       if: failure()
       uses: actions/upload-artifact@v4
       with:
-        name: compilation-log
+        name: full-compilation-log
         path: build.log
-
-    - name: Show Error Summary on Failure
-      if: failure()
-      run: tail -n 300 build.log
 
     - name: Upload APK
       if: success()
