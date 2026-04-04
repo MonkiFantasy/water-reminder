@@ -29,10 +29,16 @@ jobs:
       run: cargo install cargo-apk
 
     - name: Build APK (Debug)
-      # 使用 tee 记录日志，既能实时看到输出，也能保存到文件
+      # 增加 pipefail 确保编译错误能被捕获
+      shell: bash
       run: |
+        set -o pipefail
         cargo apk build --lib 2>&1 | tee build.log
-      continue-on-error: false
+
+    - name: List files for debugging
+      if: always()
+      # 查看 target 目录结构，确认 APK 真实路径
+      run: find target -name "*.apk"
 
     - name: Upload Build Log on Failure
       if: failure()
@@ -43,12 +49,11 @@ jobs:
 
     - name: Show Error Summary on Failure
       if: failure()
-      # 打印最后 200 行，通常错误就在这里
-      run: tail -n 200 build.log
+      run: tail -n 300 build.log
 
     - name: Upload APK
       if: success()
       uses: actions/upload-artifact@v4
       with:
         name: water-reminder-apk
-        path: target/debug/apk/water_reminder.apk
+        path: target/debug/apk/*.apk
