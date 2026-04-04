@@ -6,7 +6,6 @@ use chrono::{DateTime, Utc};
 use tokio::time::{sleep, Duration};
 use tokio::sync::watch;
 
-// 引入 Slint 代码
 slint::include_modules!();
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -26,7 +25,6 @@ impl Default for AppState {
     }
 }
 
-// 获取持久化数据路径
 fn get_config_path() -> PathBuf {
     if let Some(proj_dirs) = directories::ProjectDirs::from("com", "hacker", "waterreminder") {
         let config_dir = proj_dirs.config_dir();
@@ -61,14 +59,13 @@ pub async fn run_app() -> Result<(), slint::PlatformError> {
     let ui = MainWindow::new()?;
     let state = load_state();
 
-    // 同步 UI 状态
     ui.set_current_water(state.current_water);
     ui.set_interval_minutes(state.interval_seconds);
 
     let (tx, mut rx) = watch::channel(state.interval_seconds);
     let ui_handle = ui.as_weak();
 
-    // 回调：加水
+    // 加水回调
     let ui_handle_add = ui_handle.clone();
     ui.on_add_water(move |amount: i32| {
         if let Some(ui) = ui_handle_add.upgrade() {
@@ -85,7 +82,7 @@ pub async fn run_app() -> Result<(), slint::PlatformError> {
         }
     });
 
-    // 回调：更新频率
+    // 频率回调
     let tx_clone = tx.clone();
     ui.on_update_interval(move |secs: i32| {
         let mut s = load_state();
@@ -94,7 +91,7 @@ pub async fn run_app() -> Result<(), slint::PlatformError> {
         let _ = tx_clone.send(secs);
     });
 
-    // 回调：重置
+    // 重置回调
     let ui_handle_reset = ui_handle.clone();
     ui.on_reset_data(move || {
         if let Some(ui) = ui_handle_reset.upgrade() {
@@ -104,7 +101,7 @@ pub async fn run_app() -> Result<(), slint::PlatformError> {
         }
     });
 
-    // 后台提醒线程
+    // 定时器协程
     let ui_handle_timer = ui_handle.clone();
     tokio::spawn(async move {
         let mut secs = *rx.borrow();
@@ -113,12 +110,14 @@ pub async fn run_app() -> Result<(), slint::PlatformError> {
                 _ = sleep(Duration::from_secs(secs as u64)) => {
                     let s = load_state();
                     if s.current_water < 2000 {
-                        if let Some(ui) = ui_handle_timer.upgrade() {
-                            let _ = slint::invoke_from_event_loop(move || {
+                        let ui_weak = ui_handle_timer.clone();
+                        // 修复：将 Weak 句柄捕获进闭包，在主循环线程内 upgrade
+                        let _ = slint::invoke_from_event_loop(move || {
+                            if let Some(ui) = ui_weak.upgrade() {
                                 ui.set_last_event(slint::SharedString::from("WARNING: DEHYDRATION_IMMINENT"));
                                 ui.set_quote(slint::SharedString::from("ACTION: REPLENISH_LIQUIDS"));
-                            });
-                        }
+                            }
+                        });
                     }
                 }
                 changed = rx.changed() => {
@@ -133,7 +132,6 @@ pub async fn run_app() -> Result<(), slint::PlatformError> {
     ui.run()
 }
 
-// 安卓专用入口
 #[cfg(target_os = "android")]
 #[unsafe(no_mangle)]
 pub fn android_main(app: slint::android::AndroidApp) {
