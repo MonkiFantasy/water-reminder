@@ -29,8 +29,8 @@ jobs:
       run: cargo install cargo-apk
 
     - name: Build APK (Debug)
-      # 不再需要 --lib，让 cargo-apk 自动寻找二进制入口
-      run: cargo apk build
+      # 显式指定编译库，避开 Bin is not compatible with Cdylib 冲突
+      run: cargo apk build --lib
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
