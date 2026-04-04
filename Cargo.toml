@@ -10,6 +10,8 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 chrono = { version = "0.4", features = ["serde"] }
 directories = "5.0"
+jni = "0.21"
+once_cell = "1.18"
 
 [build-dependencies]
 slint-build = "1.8.0"
@@ -21,4 +23,5 @@ crate-type = ["lib", "cdylib"]
 [package.metadata.android]
 package = "com.hacker.waterreminder"
 label = "WaterReminder Pro"
+# 必须声明权限
 permissions = ["android.permission.POST_NOTIFICATIONS", "android.permission.VIBRATE"]
