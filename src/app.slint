@@ -1,4 +1,4 @@
-import { Button, Slider } from "std-widgets.slint";
+import { Button, Slider, ScrollView } from "std-widgets.slint";
 
 export component MainWindow inherits Window {
     in-out property <int> current_water: 0;
@@ -6,6 +6,9 @@ export component MainWindow inherits Window {
     in property <string> quote: "INIT_HYDRATION_PROTOCOL...";
     in property <string> last_event: "SYSTEM: STANDBY";
     in-out property <int> interval_minutes: 60;
+    
+    // 新增属性控制文章显示
+    in-out property <bool> showing_article: false;
 
     callback add_water(int);
     callback reset_data();
@@ -16,11 +19,11 @@ export component MainWindow inherits Window {
     min-width: 320px;
     min-height: 560px;
 
+    // 主界面布局
     VerticalLayout {
         padding: 24px;
-        spacing: 20px;
+        spacing: 15px;
 
-        // 顶部黑客风标题与图标
         HorizontalLayout {
             alignment: space-between;
             Text {
@@ -31,111 +34,114 @@ export component MainWindow inherits Window {
                 vertical-alignment: center;
             }
             
-            // 手绘风格的荧光绿“水杯”图标
             Rectangle {
-                width: 30px;
-                height: 30px;
+                width: 30px; height: 30px;
                 Rectangle {
-                    x: 5px; y: 5px;
-                    width: 15px; height: 20px;
-                    border-width: 2px;
-                    border-color: #00FF00;
-                    border-bottom-left-radius: 4px;
-                    border-bottom-right-radius: 4px;
+                    x: 5px; y: 5px; width: 15px; height: 20px;
+                    border-width: 2px; border-color: #00FF00;
+                    border-bottom-left-radius: 4px; border-bottom-right-radius: 4px;
                     Rectangle {
-                        x: 2px;
-                        y: parent.height - self.height - 2px;
+                        x: 2px; y: parent.height - self.height - 2px;
                         width: parent.width - 4px;
                         height: (parent.height - 4px) * Math.min(1.0, current_water / goal_water);
-                        background: #00FF00;
-                        opacity: 0.6;
+                        background: #00FF00; opacity: 0.6;
                     }
                 }
                 Path {
-                    x: 20px; y: 8px;
-                    width: 8px; height: 12px;
-                    stroke: #00FF00;
-                    stroke-width: 2px;
+                    x: 20px; y: 8px; width: 8px; height: 12px;
+                    stroke: #00FF00; stroke-width: 2px;
                     commands: "M 0 0 C 8 0 8 12 0 12";
                 }
             }
         }
 
         Rectangle {
-            height: 120px;
-            border-width: 1px;
-            border-color: #004400;
-            background: #001100;
+            height: 100px; border-width: 1px; border-color: #004400; background: #001100;
             Text {
                 text: Math.round((current_water / goal_water) * 100) + "%";
-                font-size: 64px;
-                color: #00FF00;
-                font-family: "monospace";
-                font-weight: 900;
+                font-size: 54px; color: #00FF00; font-family: "monospace"; font-weight: 900;
             }
         }
 
         HorizontalLayout {
-            height: 20px;
-            spacing: 4px;
+            height: 15px; spacing: 4px;
             for i in 20 : Rectangle {
                 background: (i / 20.0 < (current_water / goal_water)) ? #00FF00 : #002200;
                 border-radius: 2px;
             }
         }
 
-        Text {
-            text: "STORAGE: " + current_water + " / " + goal_water + " ML";
-            color: #00FF00;
-            font-family: "monospace";
-            horizontal-alignment: center;
-        }
-
         Rectangle {
-            height: 100px;
-            border-width: 1px;
-            border-color: #004400;
+            height: 80px; border-width: 1px; border-color: #004400;
             VerticalLayout {
-                padding: 10px;
-                spacing: 8px;
+                padding: 8px; spacing: 5px;
                 Text { text: "REMINDER_FREQ: " + interval_minutes + " SEC"; color: #00FF00; font-family: "monospace"; }
                 HorizontalLayout {
                     spacing: 8px;
-                    // 显式将 30 传入作为 int
-                    Button { text: "[30S]"; clicked => { root.interval_minutes = 30; root.update_interval(30); } }
-                    Button { text: "[60S]"; clicked => { root.interval_minutes = 60; root.update_interval(60); } }
-                    Button { text: "[120S]"; clicked => { root.interval_minutes = 120; root.update_interval(120); } }
+                    Button { text: "[30S]"; clicked => { root.update_interval(30); } }
+                    Button { text: "[60S]"; clicked => { root.update_interval(60); } }
+                    Button { text: "[120S]"; clicked => { root.update_interval(120); } }
                 }
             }
         }
 
         HorizontalLayout {
-            height: 50px;
-            spacing: 12px;
+            height: 45px; spacing: 12px;
             Button { text: "++ INTAKE_250ML"; clicked => { root.add_water(250) } }
             Button { text: "++ INTAKE_500ML"; clicked => { root.add_water(500) } }
         }
 
+        // --- 新增：查看存档按钮 ---
+        Button {
+            text: "[ READ_ARCHIVE: YUEYANG_LOU_JI ]";
+            clicked => { root.showing_article = true; }
+        }
+
         Rectangle {
-            vertical-stretch: 1;
-            background: #000000;
-            border-width: 1px;
-            border-color: #004400;
+            vertical-stretch: 1; background: #000000; border-width: 1px; border-color: #004400;
             VerticalLayout {
                 padding: 10px;
                 Text {
                     text: "> " + last_event + "\n> " + quote;
-                    color: #00CC00;
-                    font-size: 12px;
-                    font-family: "monospace";
-                    wrap: word-wrap;
+                    color: #00CC00; font-size: 12px; font-family: "monospace"; wrap: word-wrap;
                 }
             }
         }
 
-        Button {
-            text: "[ RESET_CORE_DATA ]";
-            clicked => { root.reset_data() }
+        Button { text: "[ RESET_CORE_DATA ]"; clicked => { root.reset_data() } }
+    }
+
+    // --- 弹出窗口：岳阳楼记 ---
+    if (showing_article) : Rectangle {
+        background: #050505f0; // 半透明背景
+        border-width: 2px;
+        border-color: #00FF00;
+        
+        VerticalLayout {
+            padding: 20px;
+            spacing: 15px;
+            
+            Text {
+                text: "--- DATA_DECRYPTED: 岳阳楼记 ---";
+                color: #00FF00;
+                font-family: "monospace";
+                horizontal-alignment: center;
+            }
+
+            ScrollView {
+                vertical-stretch: 1;
+                Text {
+                    text: "庆历四年春，滕子京谪守巴陵郡。越明年，政通人和，百废具兴。乃重修岳阳楼，增其旧制，刻唐贤今人诗赋于其上。属予作文以记之。\n\n予观夫巴陵胜状，在洞庭一湖。衔远山，吞长江，浩浩汤汤，横无际涯；朝晖夕阴，气象万千。此则岳阳楼之大观也，前人之述备矣。然则北通巫峡，南极潇湘，迁客骚人，多会于此，览物之情，得无异乎？\n\n若夫淫雨霏霏，连月不开，阴风怒号，浊浪排空；日星隐曜，山岳潜形；商旅不行，樯倾楫摧；薄暮冥冥，虎啸猿啼。登斯楼也，则有去国怀乡，忧谗畏讥，满目萧然，感极而悲者矣。\n\n至若春和景明，波澜不惊，上下天光，一碧万顷；沙鸥翔集，锦鳞游泳；岸芷汀兰，郁郁青青。而或长烟一空，皓月千里，浮光跃金，静影沉璧，渔歌互答，此乐何极！登斯楼也，则有心旷神怡，宠辱偕忘，把酒临风，其喜洋洋者矣。\n\n嗟夫！予尝求古仁人之心，或异二者之为，何哉？不以物喜，不以己悲；居庙堂之高则忧其民；处江湖之远则忧其君。是进亦忧，退亦忧。然则何时而乐耶？其必曰“先天下之忧而忧，后天下之乐而乐”乎。噫！微斯人，吾谁与归？";
+                    color: #00FF00;
+                    font-size: 16px;
+                    wrap: word-wrap;
+                }
+            }
+
+            Button {
+                text: "[ CLOSE_ARCHIVE ]";
+                clicked => { root.showing_article = false; }
+            }
         }
     }
 }
