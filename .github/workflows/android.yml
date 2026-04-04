@@ -29,10 +29,25 @@ jobs:
       run: cargo install cargo-apk
 
     - name: Build APK (Debug)
-      # 显式指定编译库，避开 Bin is not compatible with Cdylib 冲突
-      run: cargo apk build --lib
+      # 使用 tee 记录日志，既能实时看到输出，也能保存到文件
+      run: |
+        cargo apk build --lib 2>&1 | tee build.log
+      continue-on-error: false
+
+    - name: Upload Build Log on Failure
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: compilation-log
+        path: build.log
+
+    - name: Show Error Summary on Failure
+      if: failure()
+      # 打印最后 200 行，通常错误就在这里
+      run: tail -n 200 build.log
 
     - name: Upload APK
+      if: success()
       uses: actions/upload-artifact@v4
       with:
         name: water-reminder-apk
